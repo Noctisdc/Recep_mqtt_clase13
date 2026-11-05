@@ -3,67 +3,73 @@ import paho.mqtt.client as mqtt
 import json
 import time
 
-# Configuración de página a pantalla completa (Dashboard)
 st.set_page_config(page_title="Monitor IoT", layout="wide", page_icon="📡")
 
-# Estilos CSS personalizados
+# Estilos CSS limpios y legibles
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 .stApp {
-    background-color: #0f172a;
-    background-image: radial-gradient(#1e3a5f 1.5px, transparent 1.5px);
-    background-size: 26px 26px;
-    font-family: 'Space Grotesk', sans-serif;
-    color: #e2e8f0;
+    background-color: #121212; /* Fondo sólido oscuro */
+    font-family: 'Inter', sans-serif;
+    color: #ffffff; /* Texto principal blanco */
 }
 .header-title {
     text-align: center;
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
-    color: #38bdf8;
-    margin-bottom: 0;
-    text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    color: #ffffff;
+    margin-bottom: 5px;
 }
 .header-subtitle {
     text-align: center;
-    color: #94a3b8;
-    margin-bottom: 40px;
-    font-size: 1.2rem;
+    color: #a0a0a0; /* Gris claro */
+    margin-bottom: 30px;
+    font-size: 1.1rem;
 }
 .metric-box {
-    background: #1e293b;
-    border: 2px solid #38bdf8;
-    border-radius: 15px;
-    padding: 30px 20px;
+    background: #1e1e1e; /* Gris muy oscuro */
+    border: 1px solid #333333; /* Borde sutil */
+    border-radius: 8px;
+    padding: 25px;
     text-align: center;
-    box-shadow: 6px 6px 0px #0ea5e9;
     margin-bottom: 20px;
 }
 .metric-val {
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: #f8fafc;
-    margin: 10px 0;
+    font-size: 3rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 5px 0;
 }
 .metric-label {
-    color: #38bdf8;
-    font-size: 1.2rem;
+    color: #888888; /* Gris medio */
+    font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 div[data-testid="stButton"] > button {
-    background: #38bdf8;
-    color: #0f172a !important;
-    font-weight: 700;
+    background: #ffffff;
+    color: #121212 !important;
+    font-weight: 600;
     border: none;
-    padding: 15px 30px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
+    padding: 12px 24px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
 }
 div[data-testid="stButton"] > button:hover {
-    background: #e2e8f0;
-    transform: translateY(-2px);
+    background: #e0e0e0; /* Hover un poco más oscuro */
+}
+/* Inputs */
+.stTextInput > div > div > input, .stNumberInput > div > div > input {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #333333;
+}
+/* Alertas */
+.stAlert {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #333333;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -100,61 +106,33 @@ def get_mqtt_message(broker, port, topic, client_id):
     except Exception as e:
         return {"error": str(e)}
 
-# --- Interfaz Principal ---
-st.markdown('<p class="header-title">📡 Centro de Monitoreo IoT</p>', unsafe_allow_html=True)
+
+st.markdown('<p class="header-title">Centro de Monitoreo IoT</p>', unsafe_allow_html=True)
 st.markdown('<p class="header-subtitle">Adquisición de datos telemétricos en tiempo real vía MQTT</p>', unsafe_allow_html=True)
 
-# Layout: Panel lateral para configuración, área principal para visualización
+
 col_config, col_data = st.columns([1, 2], gap="large")
 
 with col_config:
     with st.container(border=True):
-        st.subheader("⚙️ Conexión")
+        st.subheader("Configuración")
         broker = st.text_input("Broker MQTT", value="broker.mqttdashboard.com")
         port = st.number_input("Puerto TCP", value=1883)
         topic = st.text_input("Tópico de Suscripción", value="Sensor/THP2")
         client_id = st.text_input("ID Cliente", value="dashboard_iot_camilo")
         
         st.write("")
-        if st.button("🔄 Capturar Datos", use_container_width=True):
-            with st.spinner("Escuchando al sensor..."):
+        if st.button("Capturar Datos", use_container_width=True):
+            with st.spinner("Conectando..."):
                 st.session_state.sensor_data = get_mqtt_message(broker, int(port), topic, client_id)
 
 with col_data:
     data = st.session_state.sensor_data
     
     if data is None:
-        st.info("👈 Presiona 'Capturar Datos' (Asegúrate de que Wokwi esté corriendo).")
+        st.info("Presiona 'Capturar Datos' para obtener la lectura más reciente del simulador.")
     
     elif isinstance(data, dict) and "error" in data:
-        st.error(f"❌ Error de red: {data['error']}. Revisa la conexión o el puerto.")
+        st.error(f"Error de conexión: {data['error']}")
     
     else:
-        if isinstance(data, dict):
-            # Extraer variables con valores por defecto por si acaso
-            temp = data.get("Temp", "--")
-            hum = data.get("Hum", "--")
-            
-            # Tarjetas de diseño personalizado
-            c1, c2 = st.columns(2)
-            with c1:
-                st.markdown(f"""
-                <div class="metric-box">
-                    <div class="metric-label">🌡️ Temperatura</div>
-                    <div class="metric-val">{temp} °C</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with c2:
-                st.markdown(f"""
-                <div class="metric-box">
-                    <div class="metric-label">💧 Humedad</div>
-                    <div class="metric-val">{hum} %</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with st.expander("Ver JSON en crudo recibido"):
-                st.json(data)
-        else:
-            st.warning("Se recibió un mensaje, pero no tiene formato JSON.")
-            st.code(data)
