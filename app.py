@@ -10,9 +10,9 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 .stApp {
-    background-color: #121212; /* Fondo sólido oscuro */
+    background-color: #121212;
     font-family: 'Inter', sans-serif;
-    color: #ffffff; /* Texto principal blanco */
+    color: #ffffff;
 }
 .header-title {
     text-align: center;
@@ -23,13 +23,13 @@ st.markdown("""
 }
 .header-subtitle {
     text-align: center;
-    color: #a0a0a0; /* Gris claro */
+    color: #a0a0a0;
     margin-bottom: 30px;
     font-size: 1.1rem;
 }
 .metric-box {
-    background: #1e1e1e; /* Gris muy oscuro */
-    border: 1px solid #333333; /* Borde sutil */
+    background: #1e1e1e;
+    border: 1px solid #333333;
     border-radius: 8px;
     padding: 25px;
     text-align: center;
@@ -42,7 +42,7 @@ st.markdown("""
     margin: 5px 0;
 }
 .metric-label {
-    color: #888888; /* Gris medio */
+    color: #888888;
     font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -57,15 +57,13 @@ div[data-testid="stButton"] > button {
     transition: background 0.2s ease;
 }
 div[data-testid="stButton"] > button:hover {
-    background: #e0e0e0; /* Hover un poco más oscuro */
+    background: #e0e0e0;
 }
-/* Inputs */
 .stTextInput > div > div > input, .stNumberInput > div > div > input {
     background-color: #1e1e1e;
     color: #ffffff;
     border: 1px solid #333333;
 }
-/* Alertas */
 .stAlert {
     background-color: #1e1e1e;
     color: #ffffff;
@@ -106,10 +104,8 @@ def get_mqtt_message(broker, port, topic, client_id):
     except Exception as e:
         return {"error": str(e)}
 
-
 st.markdown('<p class="header-title">Centro de Monitoreo IoT</p>', unsafe_allow_html=True)
 st.markdown('<p class="header-subtitle">Adquisición de datos telemétricos en tiempo real vía MQTT</p>', unsafe_allow_html=True)
-
 
 col_config, col_data = st.columns([1, 2], gap="large")
 
@@ -131,8 +127,32 @@ with col_data:
     
     if data is None:
         st.info("Presiona 'Capturar Datos' para obtener la lectura más reciente del simulador.")
-    
     elif isinstance(data, dict) and "error" in data:
         st.error(f"Error de conexión: {data['error']}")
-    
     else:
+        if isinstance(data, dict):
+            temp = data.get("Temp", "--")
+            hum = data.get("Hum", "--")
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"""
+                <div class="metric-box">
+                    <div class="metric-label">Temperatura</div>
+                    <div class="metric-val">{temp} °C</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with c2:
+                st.markdown(f"""
+                <div class="metric-box">
+                    <div class="metric-label">Humedad</div>
+                    <div class="metric-val">{hum} %</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with st.expander("Detalles JSON"):
+                st.json(data)
+        else:
+            st.warning("Mensaje recibido (Formato no JSON)")
+            st.code(data)
